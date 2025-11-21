@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineering Unit Converter</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Use Inter font */
+        body {
+            font-family: "Inter", sans-serif;
+        }
+        /* Custom focus styles for better visibility */
+        select:focus, input:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+            border-color: #3B82F6;
+            outline: none;
+        }
+        /* Style for the number input to remove arrows */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-lg bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-700">
+        
+        <!-- Header -->
+        <h1 class="text-3xl font-bold text-center text-blue-400 mb-2">
+            Engineering Unit Converter
+        </h1>
+        <p class="text-gray-400 text-center mb-8">
+            A quick tool for common engineering calculations.
+        </p>
+
+        <!-- Category Selector -->
+        <div class="mb-6">
+            <label for="category" class="block mb-2 text-sm font-medium text-gray-300">Conversion Type</label>
+            <select id="category" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg w-full p-3">
+                <option value="length">Length</option>
+                <option value="mass">Mass</option>
+                <option value="pressure">Pressure</option>
+                <option value="force">Force</option>
+                <option value="energy">Energy</option>
+            </select>
+        </div>
+
+        <!-- Conversion Interface -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+            
+            <!-- "From" Section -->
+            <div>
+                <label for="unitFrom" class="block mb-2 text-sm font-medium text-gray-300">From</label>
+                <select id="unitFrom" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg w-full p-3 mb-3">
+                    <!-- Options populated by JS -->
+                </select>
+                <input type="number" id="inputFrom" placeholder="Enter value" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg w-full p-3" value="1">
+            </div>
+
+            <!-- "To" Section -->
+            <div>
+                <label for="unitTo" class="block mb-2 text-sm font-medium text-gray-300">To</label>
+                <select id="unitTo" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg w-full p-3 mb-3">
+                    <!-- Options populated by JS -->
+                </select>
+                <input type="number" id="inputTo" placeholder="Result" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg w-full p-3" readonly>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Define all conversion factors relative to a common base unit for each category.
+        // This makes it easy to add new units.
+        const conversionFactors = {
+            length: {
+                // Base unit: meters
+                meters: 1,
+                kilometers: 0.001,
+                centimeters: 100,
+                millimeters: 1000,
+                feet: 3.28084,
+                inches: 39.3701,
+                miles: 0.000621371,
+                yards: 1.09361,
+            },
+            mass: {
+                // Base unit: kilograms
+                kilograms: 1,
+                grams: 1000,
+                milligrams: 1000000,
+                pounds: 2.20462,
+                ounces: 35.274,
+                slugs: 0.0685218
+            },
+            pressure: {
+                // Base unit: pascals
+                pascals: 1,
+                kilopascals: 0.001,
+                megapascals: 0.000001,
+                bar: 0.00001,
+                atmospheres: 0.00000986923,
+                psi: 0.000145038,
+                torr: 0.00750062
+            },
+            force: {
+                // Base unit: newtons
+                newtons: 1,
+                kilonewtons: 0.001,
+                'pound-force': 0.224809,
+                'kilogram-force': 0.101972
+            },
+            energy: {
+                // Base unit: joules
+                joules: 1,
+                kilojoules: 0.001,
+                calories: 0.239006,
+                kilocalories: 0.000239006,
+                'watt-hours': 0.000277778,
+                btu: 0.000947817,
+                'foot-pounds': 0.737562
+            }
+        };
+
+        // Get DOM elements
+        const categorySelect = document.getElementById('category');
+        const unitFromSelect = document.getElementById('unitFrom');
+        const unitToSelect = document.getElementById('unitTo');
+        const inputFrom = document.getElementById('inputFrom');
+        const inputTo = document.getElementById('inputTo');
+
+        // Function to populate the unit dropdowns based on the selected category
+        function populateUnitOptions() {
+            const category = categorySelect.value;
+            const units = conversionFactors[category];
+            
+            // Clear previous options
+            unitFromSelect.innerHTML = '';
+            unitToSelect.innerHTML = '';
+
+            // Populate new options
+            let i = 0;
+            for (const unit in units) {
+                const optionFrom = new Option(unit, unit);
+                const optionTo = new Option(unit, unit);
+                
+                unitFromSelect.add(optionFrom);
+                unitToSelect.add(optionTo);
+                
+                // Set default selection (e.g., meters to feet)
+                if (i === 0) {
+                    optionFrom.selected = true;
+                }
+                if (i === 1) {
+                    optionTo.selected = true;
+                }
+                // Specific defaults for categories
+                if (category === 'length' && unit === 'meters') optionFrom.selected = true;
+                if (category === 'length' && unit === 'feet') optionTo.selected = true;
+                
+                if (category === 'mass' && unit === 'kilograms') optionFrom.selected = true;
+                if (category === 'mass' && unit === 'pounds') optionTo.selected = true;
+                
+                if (category === 'pressure' && unit === 'pascals') optionFrom.selected = true;
+                if (category === 'pressure' && unit === 'psi') optionTo.selected = true;
+
+                i++;
+            }
+            
+            // Perform an initial conversion
+            convert();
+        }
+
+        // Function to perform the conversion
+        function convert() {
+            const category = categorySelect.value;
+            const fromUnit = unitFromSelect.value;
+            const toUnit = unitToSelect.value;
+            const fromValue = parseFloat(inputFrom.value);
+
+            if (isNaN(fromValue)) {
+                inputTo.value = '';
+                return;
+            }
+
+            // Get factors from the data object
+            const factors = conversionFactors[category];
+            const fromFactor = factors[fromUnit];
+            const toFactor = factors[toUnit];
+
+            // Convert "from" value to the base unit, then to the "to" unit
+            // (value / fromFactor) -> converts to base unit
+            // * toFactor -> converts from base unit to target unit
+            const result = (fromValue / fromFactor) * toFactor;
+
+            // Display the result with reasonable precision
+            if (result < 0.0001 && result > 0) {
+                inputTo.value = result.toExponential(4);
+            } else {
+                inputTo.value = parseFloat(result.toFixed(6));
+            }
+        }
+
+        // Event Listeners
+        categorySelect.addEventListener('change', populateUnitOptions);
+        inputFrom.addEventListener('input', convert);
+        unitFromSelect.addEventListener('change', convert);
+        unitToSelect.addEventListener('change', convert);
+
+        // Initial setup on page load
+        document.addEventListener('DOMContentLoaded', populateUnitOptions);
+    </script>
+</body>
+</html>
